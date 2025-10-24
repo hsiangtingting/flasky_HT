@@ -1,10 +1,40 @@
-from flask import abort, Blueprint, make_response
-from app.models.cat import cats
+from flask import abort, Blueprint, make_response, request 
+from ..models.cat import Cat
+from ..db import db
 
 cats_bp = Blueprint("cat_bp", __name__, url_prefix="/cats")
 
+@cats_bp.post("")
+def create_cat():
+    request_body = request.get_json()
+    name = request_body["name"]
+    color = request_body["color"]
+    personality = request_body["personality"]
+
+    new_cat = Cat(
+        name=name,
+        color=color,
+        personality=personality
+    )
+    db.session.add(new_cat)
+    db.session.commit()
+
+    cat_response = dict(
+        id=new_cat.id,
+        name=new_cat.name,
+        color=new_cat.color,
+        personality=new_cat.personality
+    )
+
+    return cat_response, 201
+
+
+
+
 @cats_bp.get("")
 def get_all_cats():
+    query = db.select(Cat).order_by(Cat.id)
+    cats = db.session.scalars(query)
     result_list = []
 
     for cat in cats:
@@ -17,29 +47,29 @@ def get_all_cats():
 
     return result_list
 
-@cats_bp.get("/<id>")
-def get_single_cat(id):
-    cat = validate_cat(id)
-    cat_dict = dict(
-        id=cat.id,
-        name=cat.name,
-        color=cat.color,
-        personality=cat.personality
-    )
+# @cats_bp.get("/<id>")
+# def get_single_cat(id):
+#     cat = validate_cat(id)
+#     cat_dict = dict(
+#         id=cat.id,
+#         name=cat.name,
+#         color=cat.color,
+#         personality=cat.personality
+#     )
 
-    return cat_dict
+#     return cat_dict
 
-def validate_cat(id):
-    try:
-        id = int(id)
-    except ValueError:
-        invalid = {"message": f"Cat id ({id}) is invalid."}
+# def validate_cat(id):
+#     try:
+#         id = int(id)
+#     except ValueError:
+#         invalid = {"message": f"Cat id ({id}) is invalid."}
 
-        abort(make_response(invalid, 400))
+#         abort(make_response(invalid, 400))
 
-    for cat in cats:
-        if cat.id == id:
-            return cat
+#     for cat in cats:
+#         if cat.id == id:
+#             return cat
     
-    not_found = {"messsage": f"Cat with id ({id}) not found."}
-    abort(make_response(not_found, 404))
+#     not_found = {"messsage": f"Cat with id ({id}) not found."}
+#     abort(make_response(not_found, 404))
