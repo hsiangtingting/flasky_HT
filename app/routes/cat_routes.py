@@ -40,6 +40,10 @@ def get_all_cats():
     if color_param:
         query = query.where(Cat.color.ilike(f"%{color_param}%"))
 
+    personality_param = request.args.get("personality")
+    if personality_param:
+        query = query.where(Cat.personality.ilike(f"%{personality_param}%"))
+
     query = query.order_by(Cat.id)
 
     cats = db.session.scalars(query)
